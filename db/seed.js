@@ -8,6 +8,10 @@ const {
   updatePost,
   getAllPosts,
   getPostsByUser,
+  getPostById,
+  addTagsToPost,
+  createTags,
+  createPostTag,
 } = require("./index");
 
 async function dropTables() {
@@ -16,6 +20,8 @@ async function dropTables() {
 
     // have to make sure to drop in correct order
     await client.query(`
+      DROP TABLE IF EXISTS post_tags;
+      DROP TABLE IF EXISTS tags;
       DROP TABLE IF EXISTS posts;
       DROP TABLE IF EXISTS users;
     `);
@@ -47,6 +53,14 @@ async function createTables() {
         content TEXT NOT NULL,
         active BOOLEAN DEFAULT true
       );
+      CREATE TABLE tags (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) UNIQUE NOT NULL
+      );
+      CREATE TABLE post_tags (
+        "postId" INTEGER REFERENCES posts(id) UNIQUE,
+        "tagId" INTEGER REFERENCES tags(id) UNIQUE
+      )
     `);
 
     console.log("Finished building tables!");
@@ -115,7 +129,29 @@ async function createInitialPosts() {
     throw error;
   }
 }
+async function createInitialTags() {
+  try {
+    console.log("Starting to create tags...");
 
+    const [happy, sad, inspo, catman] = await createTags([
+      "#happy",
+      "#worst-day-ever",
+      "#youcandoanything",
+      "#catmandoeverything",
+    ]);
+
+    const [postOne, postTwo, postThree] = await getAllPosts();
+
+    await addTagsToPost(postOne.id, [happy, inspo]);
+    await addTagsToPost(postTwo.id, [sad, inspo]);
+    await addTagsToPost(postThree.id, [happy, catman, inspo]);
+
+    console.log("Finished creating tags!");
+  } catch (error) {
+    console.log("Error creating tags!");
+    throw error;
+  }
+}
 async function rebuildDB() {
   try {
     client.connect();
@@ -124,6 +160,7 @@ async function rebuildDB() {
     await createTables();
     await createInitialUsers();
     await createInitialPosts();
+    await createInitialTags(); // new
   } catch (error) {
     console.log("Error during rebuildDB");
     throw error;
