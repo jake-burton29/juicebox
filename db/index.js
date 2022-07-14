@@ -146,26 +146,33 @@ async function updatePost(id, fields = {}) {
 
 async function getAllPosts() {
   try {
-    const { rows } = await client.query(`
-      SELECT *
+    const { rows: postIds } = await client.query(`
+      SELECT id
       FROM posts;
     `);
 
-    return rows;
+    const posts = await Promise.all(
+      postIds.map((post) => getPostById(post.id))
+    );
+
+    return posts;
   } catch (error) {
     throw error;
   }
 }
-
 async function getPostsByUser(userId) {
   try {
-    const { rows } = await client.query(`
-      SELECT * 
-      FROM posts
+    const { rows: postIds } = await client.query(`
+      SELECT id 
+      FROM posts 
       WHERE "authorId"=${userId};
     `);
 
-    return rows;
+    const posts = await Promise.all(
+      postIds.map((post) => getPostById(post.id))
+    );
+
+    return posts;
   } catch (error) {
     throw error;
   }
@@ -230,7 +237,7 @@ async function createTags(tagList) {
   try {
     await client.query(
       `
-    INSERT INTO tags(name)
+    INSERT INTO tags (name)
     VALUES (${insertValues})
     ON CONFLICT (name) DO NOTHING;
     `,
@@ -238,7 +245,8 @@ async function createTags(tagList) {
     );
     const { rows } = await client.query(
       `
-      SELECT * FROM tags WHERE (name)
+      SELECT * FROM tags
+      WHERE (name)
       IN (${selectValues});`,
       tagList
     );
