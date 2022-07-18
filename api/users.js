@@ -32,11 +32,15 @@ usersRouter.post("/login", async (req, res, next) => {
 
     if (user && user.password == password) {
       // create token & return to user
-      const token = jwt.sign({ username }, process.env.JWT_SECRET, {
-        expiresIn: "1h",
-      });
+      const token = jwt.sign(
+        { username: username, id: user.id },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: "1h",
+        }
+      );
       const recoveredData = jwt.verify(token, process.env.JWT_SECRET);
-      res.send({ token: recoveredData.token, message: "you're logged in!" });
+      res.send({ message: "you're logged in!", token: token });
     } else {
       next({
         name: "IncorrectCredentialsError",
@@ -50,3 +54,5 @@ usersRouter.post("/login", async (req, res, next) => {
 });
 
 module.exports = usersRouter;
+
+//curl http://localhost:4000/api -H 'Authorization Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFsYmVydCIsImlkIjoxLCJpYXQiOjE2NTgxNzU5ODIsImV4cCI6MTY1ODE3OTU4Mn0.rkuAKEFZMxx7y7k4n1DyjrPqUP7tU_g98lpkE4k_fow'
